@@ -113,6 +113,7 @@
             this.prevBtn = $(`searchPrev${side}`);
             this.nextBtn = $(`searchNext${side}`);
             this.closeBtn = $(`searchClose${side}`);
+            this.toggleBtn = $(`searchToggle${side}`);
 
             this.highlightsEl = $(`editorHighlights${side}`);
             this.markersEl = $(`editorMarkers${side}`);
@@ -129,6 +130,7 @@
             if (this.wordChk) this.wordChk.addEventListener('change', onInput);
             if (this.regexChk) this.regexChk.addEventListener('change', onInput);
 
+            if (this.toggleBtn) this.toggleBtn.addEventListener('click', () => this.open());
             if (this.prevBtn) this.prevBtn.addEventListener('click', () => this._navigate(-1));
             if (this.nextBtn) this.nextBtn.addEventListener('click', () => this._navigate(1));
             if (this.closeBtn) this.closeBtn.addEventListener('click', () => this.close());
