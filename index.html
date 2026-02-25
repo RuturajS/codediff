@@ -127,8 +127,47 @@
                                 accept=".js,.py,.java,.json,.txt,.html,.htm,.css,.xml,.log,.ts,.tsx,.jsx,.csv,.yaml,.yml,.md,.sh,.rb,.go,.rs,.c,.cpp,.h"
                                 hidden />
                         </label>
+                        <!-- Search toggle -->
+                        <button class="btn btn-sm btn-ghost pane-search-toggle" id="searchToggleLeft"
+                            title="Find in left pane (Ctrl+F)" aria-label="Search left pane">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2.5">
+                                <circle cx="11" cy="11" r="8" />
+                                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                            </svg>
+                        </button>
+                        <!-- Copy all -->
+                        <button class="btn btn-sm btn-ghost" id="copyAllLeft" title="Copy all content from left pane">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <rect x="9" y="9" width="13" height="13" rx="2" />
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                            </svg>
+                            Copy All
+                        </button>
                         <button class="btn btn-sm btn-ghost" id="clearLeft" title="Clear left pane">Clear</button>
                     </div>
+                </div>
+
+                <!-- Left Search Bar -->
+                <div class="pane-search" id="searchBarLeft" hidden role="search" aria-label="Search in left pane">
+                    <input type="text" id="searchInputLeft" class="search-input" placeholder="Find…" autocomplete="off"
+                        spellcheck="false" />
+                    <div class="search-opts">
+                        <label class="search-opt-btn" title="Case sensitive">
+                            <input type="checkbox" id="searchCaseLeft" /><span>Aa</span>
+                        </label>
+                        <label class="search-opt-btn" title="Whole word">
+                            <input type="checkbox" id="searchWordLeft" /><span>W</span>
+                        </label>
+                        <label class="search-opt-btn" title="Regular expression">
+                            <input type="checkbox" id="searchRegexLeft" /><span>.*</span>
+                        </label>
+                    </div>
+                    <span class="search-count" id="searchCountLeft" aria-live="polite"></span>
+                    <button class="search-nav-btn" id="searchPrevLeft" title="Previous match (Shift+Enter)">↑</button>
+                    <button class="search-nav-btn" id="searchNextLeft" title="Next match (Enter)">↓</button>
+                    <button class="search-close-btn" id="searchCloseLeft" title="Close (Esc)">✕</button>
                 </div>
 
                 <div class="drop-zone" id="dropZoneLeft" aria-label="Drop file here or paste code">
@@ -176,8 +215,47 @@
                                 accept=".js,.py,.java,.json,.txt,.html,.htm,.css,.xml,.log,.ts,.tsx,.jsx,.csv,.yaml,.yml,.md,.sh,.rb,.go,.rs,.c,.cpp,.h"
                                 hidden />
                         </label>
+                        <!-- Search toggle -->
+                        <button class="btn btn-sm btn-ghost pane-search-toggle" id="searchToggleRight"
+                            title="Find in right pane (Ctrl+F)" aria-label="Search right pane">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2.5">
+                                <circle cx="11" cy="11" r="8" />
+                                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                            </svg>
+                        </button>
+                        <!-- Copy all -->
+                        <button class="btn btn-sm btn-ghost" id="copyAllRight" title="Copy all content from right pane">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <rect x="9" y="9" width="13" height="13" rx="2" />
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                            </svg>
+                            Copy All
+                        </button>
                         <button class="btn btn-sm btn-ghost" id="clearRight" title="Clear right pane">Clear</button>
                     </div>
+                </div>
+
+                <!-- Right Search Bar -->
+                <div class="pane-search" id="searchBarRight" hidden role="search" aria-label="Search in right pane">
+                    <input type="text" id="searchInputRight" class="search-input" placeholder="Find…" autocomplete="off"
+                        spellcheck="false" />
+                    <div class="search-opts">
+                        <label class="search-opt-btn" title="Case sensitive">
+                            <input type="checkbox" id="searchCaseRight" /><span>Aa</span>
+                        </label>
+                        <label class="search-opt-btn" title="Whole word">
+                            <input type="checkbox" id="searchWordRight" /><span>W</span>
+                        </label>
+                        <label class="search-opt-btn" title="Regular expression">
+                            <input type="checkbox" id="searchRegexRight" /><span>.*</span>
+                        </label>
+                    </div>
+                    <span class="search-count" id="searchCountRight" aria-live="polite"></span>
+                    <button class="search-nav-btn" id="searchPrevRight" title="Previous match (Shift+Enter)">↑</button>
+                    <button class="search-nav-btn" id="searchNextRight" title="Next match (Enter)">↓</button>
+                    <button class="search-close-btn" id="searchCloseRight" title="Close (Esc)">✕</button>
                 </div>
 
                 <div class="drop-zone" id="dropZoneRight" aria-label="Drop file here or paste code">
@@ -243,14 +321,19 @@
                     </svg>
                     Download
                 </button>
+                <!-- Inline is now the default (active) -->
                 <div class="view-toggle" role="group" aria-label="View mode">
-                    <button class="btn btn-sm view-btn active" id="viewSideBySide" data-view="sidebyside"
+                    <button class="btn btn-sm view-btn" id="viewSideBySide" data-view="sidebyside"
                         title="Side by side view">Side by Side</button>
-                    <button class="btn btn-sm view-btn" id="viewInline" data-view="inline"
+                    <button class="btn btn-sm view-btn active" id="viewInline" data-view="inline"
                         title="Inline view">Inline</button>
                 </div>
             </div>
         </div>
+
+        <!-- Vertical Resize Handle between editors and diff output -->
+        <div class="diff-v-resizer" id="diffVResizer" title="Drag to resize diff output" role="separator"
+            aria-orientation="horizontal"></div>
 
         <!-- Diff Output Section -->
         <section class="diff-output-section" id="diffOutputSection" aria-label="Diff output">
@@ -264,6 +347,24 @@
                 <kbd>Ctrl</kbd> + <kbd>Enter</kbd>
             </div>
             <div class="diff-output" id="diffOutput" role="table" aria-label="Diff results"></div>
+
+            <!-- Suggestion Panel -->
+            <div class="suggestion-panel" id="suggestionPanel" hidden aria-label="Change suggestions">
+                <div class="suggestion-header">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        style="color:var(--diff-changed-text);flex-shrink:0">
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="12" y1="8" x2="12" y2="12" />
+                        <line x1="12" y1="16" x2="12.01" y2="16" />
+                    </svg>
+                    <span>Suggestions — <strong id="suggestionCount">0</strong> changed line(s)</span>
+                    <button class="btn btn-sm btn-ghost" id="applyAllSuggestions"
+                        title="Replace all changed left-pane lines with their right-pane values">Apply All</button>
+                    <button class="btn btn-sm btn-ghost suggestion-toggle-btn" id="toggleSuggestions"
+                        title="Collapse / expand">▼</button>
+                </div>
+                <div class="suggestion-list" id="suggestionList" role="list"></div>
+            </div>
         </section>
 
     </main>
@@ -301,6 +402,10 @@
                             <td>Clear all</td>
                         </tr>
                         <tr>
+                            <td><kbd>Ctrl</kbd> + <kbd>F</kbd></td>
+                            <td>Find in focused pane</td>
+                        </tr>
+                        <tr>
                             <td><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>T</kbd></td>
                             <td>Toggle theme</td>
                         </tr>
@@ -318,7 +423,7 @@
                         </tr>
                         <tr>
                             <td><kbd>Esc</kbd></td>
-                            <td>Close modal</td>
+                            <td>Close / close search</td>
                         </tr>
                     </tbody>
                 </table>

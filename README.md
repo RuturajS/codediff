@@ -6,7 +6,7 @@
 [![License](https://img.shields.io/badge/License-MIT-green)](#license)
 [![Zero Dependencies](https://img.shields.io/badge/Dependencies-Zero-brightgreen)](#tech-stack)
 
-**[🔗 Live Demo](#)** ← Replace with your GitHub Pages URL after deploy
+**[🔗 Live Demo](https://ruturajs.github.io/codediff)**
 
 ---
 

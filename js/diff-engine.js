@@ -489,13 +489,14 @@
             const hunks = myersDiff(leftLines, rightLines, options.ignoreWhitespace);
             const stats = computeStats(hunks);
 
-            const html = options.viewMode === 'inline'
-                ? renderInline(hunks)
-                : renderSideBySide(hunks);
+            // default to inline
+            const html = (options.viewMode === 'sidebyside')
+                ? renderSideBySide(hunks)
+                : renderInline(hunks);
 
             const plainText = renderPlainText(hunks);
 
-            return { html, stats, plainText };
+            return { html, stats, plainText, hunks };
         },
 
         /**
