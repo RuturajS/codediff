@@ -64,6 +64,8 @@
     const applyAllBtn = $('applyAllSuggestions');
     const toggleSugBtn = $('toggleSuggestions');
 
+    let searchLeft, searchRight;
+
     // ─────────────────────────────────────────────────────────
     //  STATE
     // ─────────────────────────────────────────────────────────
@@ -89,6 +91,231 @@
         if (statRemovedCount) statRemovedCount.textContent = '0';
         if (statChangedCount) statChangedCount.textContent = '0';
     }
+
+
+
+    // ─────────────────────────────────────────────────────────
+    //  PER-PANE SEARCH
+    // ─────────────────────────────────────────────────────────
+    class PaneSearch {
+        constructor(side, editor) {
+            this.side = side;
+            this.editor = editor;
+            this.matches = [];
+            this.current = -1;
+
+            this.bar = $(`searchBar${side}`);
+            this.input = $(`searchInput${side}`);
+            this.countEl = $(`searchCount${side}`);
+            this.caseChk = $(`searchCase${side}`);
+            this.wordChk = $(`searchWord${side}`);
+            this.regexChk = $(`searchRegex${side}`);
+            this.prevBtn = $(`searchPrev${side}`);
+            this.nextBtn = $(`searchNext${side}`);
+            this.closeBtn = $(`searchClose${side}`);
+            this.toggleBtn = $(`searchToggle${side}`);
+
+            this.highlightsEl = $(`editorHighlights${side}`);
+            this.markersEl = $(`editorMarkers${side}`);
+
+            this._bind();
+        }
+
+        _bind() {
+            if (this.toggleBtn) this.toggleBtn.addEventListener('click', () => this.open());
+            this.closeBtn.addEventListener('click', () => this.close());
+
+            this.input.addEventListener('input', () => this._search());
+            this.caseChk.addEventListener('change', () => this._search());
+            this.wordChk.addEventListener('change', () => this._search());
+            this.regexChk.addEventListener('change', () => this._search());
+
+            this.prevBtn.addEventListener('click', () => this._navigate(-1));
+            this.nextBtn.addEventListener('click', () => this._navigate(1));
+
+            this.input.addEventListener('keydown', e => {
+                if (e.key === 'Enter') { e.preventDefault(); this._navigate(e.shiftKey ? -1 : 1, true); }
+                if (e.key === 'Escape') this.close();
+            });
+
+            // Scroll Sync for Highlights
+            this.editor.addEventListener('scroll', () => {
+                if (this.highlightsEl) {
+                    this.highlightsEl.scrollTop = this.editor.scrollTop;
+                    this.highlightsEl.scrollLeft = this.editor.scrollLeft;
+                }
+            });
+
+            // Marker Clicks
+            this.markersEl.addEventListener('click', e => {
+                const marker = e.target.closest('.search-marker');
+                if (marker) {
+                    const idx = parseInt(marker.dataset.idx, 10);
+                    this.current = idx;
+                    this._jumpTo(idx, true);
+                    this._updateCount();
+                    this._renderVisuals();
+                }
+            });
+        }
+
+        open() {
+            this.bar.hidden = false;
+            this.input.focus();
+            this.input.select();
+            this._search();
+        }
+
+        close() {
+            this.bar.hidden = true;
+            this.matches = [];
+            this.current = -1;
+            this._updateCount();
+            this._renderVisuals(); // Clear visuals
+            this.editor.focus();
+        }
+
+        isOpen() { return !this.bar.hidden; }
+
+        _buildRegex() {
+            const term = this.input.value;
+            if (!term) return null;
+            const flags = this.caseChk.checked ? 'g' : 'gi';
+            if (this.regexChk.checked) return new RegExp(term, flags);
+            let esc = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            if (this.wordChk.checked) esc = `\\b${esc}\\b`;
+            return new RegExp(esc, flags);
+        }
+
+        _search(autoJump = false) {
+            this.matches = [];
+            this.current = -1;
+            this.countEl.classList.remove('no-match');
+
+            const regex = this._buildRegex();
+            if (!regex) {
+                this._updateCount();
+                this._renderVisuals();
+                return;
+            }
+
+            try {
+                const text = this.editor.value;
+                let m;
+                // Use a copy to avoid regex state issues with exec
+                const searchRegex = new RegExp(regex.source, regex.flags);
+                while ((m = searchRegex.exec(text)) !== null) {
+                    this.matches.push({ start: m.index, end: m.index + m[0].length });
+                    if (this.matches.length > 5000) break;
+                    if (m.index === searchRegex.lastIndex) searchRegex.lastIndex++;
+                }
+            } catch {
+                this.countEl.textContent = 'Invalid regex';
+                this.countEl.classList.add('no-match');
+                this._renderVisuals();
+                return;
+            }
+
+            if (this.matches.length > 0) {
+                this.current = 0;
+                if (autoJump) this._jumpTo(0, true);
+            } else if (this.input.value) {
+                this.countEl.classList.add('no-match');
+            }
+
+            this._updateCount();
+            this._renderVisuals();
+        }
+
+        _navigate(dir, focusInput = false) {
+            if (this.matches.length === 0) return;
+            this.current = (this.current + dir + this.matches.length) % this.matches.length;
+            this._jumpTo(this.current, !focusInput);
+            if (focusInput) this.input.focus();
+            this._updateCount();
+            this._renderVisuals();
+        }
+
+        _jumpTo(idx, focusEditor = false) {
+            const match = this.matches[idx];
+            if (!match) return;
+
+            if (focusEditor) this.editor.focus();
+            this.editor.setSelectionRange(match.start, match.end);
+
+            const textToMatch = this.editor.value.substring(0, match.start);
+            const lineNum = textToMatch.split(/\r?\n/).length;
+            const lineHeight = parseFloat(getComputedStyle(this.editor).lineHeight) || 19;
+            const targetScroll = Math.max(0, (lineNum - 3) * lineHeight);
+            this.editor.scrollTop = targetScroll;
+            this.highlightsEl.scrollTop = targetScroll;
+        }
+
+        _updateCount() {
+            if (!this.input.value) {
+                this.countEl.textContent = '';
+            } else if (this.matches.length === 0) {
+                this.countEl.textContent = 'No results';
+            } else {
+                this.countEl.textContent = `${this.current + 1} / ${this.matches.length}`;
+            }
+            this.prevBtn.disabled = this.matches.length === 0;
+            this.nextBtn.disabled = this.matches.length === 0;
+        }
+
+        _renderVisuals() {
+            if (!this.isOpen() || this.matches.length === 0) {
+                this.highlightsEl.innerHTML = '';
+                this.markersEl.innerHTML = '';
+                return;
+            }
+
+            const text = this.editor.value;
+            let html = '';
+            let markersHtml = '';
+            let lastIdx = 0;
+
+            const totalLen = text.length || 1;
+
+            this.matches.forEach((m, i) => {
+                // Highlights
+                html += DiffEngine.escape(text.substring(lastIdx, m.start));
+                const isCurrent = (i === this.current);
+                html += `<mark class="${isCurrent ? 'current' : ''}">${DiffEngine.escape(text.substring(m.start, m.end))}</mark>`;
+                lastIdx = m.end;
+
+                // Markers (Scrollbar)
+                const top = (m.start / totalLen) * 100;
+                markersHtml += `<div class="search-marker" style="top:${top}%" data-idx="${i}"></div>`;
+            });
+            html += DiffEngine.escape(text.substring(lastIdx));
+
+            // The highlights div needs a trailing newline char if the textarea has one 
+            // to maintain perfect height alignment
+            if (text.endsWith('\n')) html += '\n';
+
+            this.highlightsEl.innerHTML = html;
+            this.markersEl.innerHTML = markersHtml;
+            this.highlightsEl.scrollTop = this.editor.scrollTop;
+            this.highlightsEl.scrollLeft = this.editor.scrollLeft;
+        }
+
+        /** Called when editor content changes so match indices stay fresh */
+        refresh() { if (this.isOpen()) this._search(false); }
+    }
+
+    // Instantiate both search helpers
+    searchLeft = new PaneSearch('Left', editorLeft);
+    searchRight = new PaneSearch('Right', editorRight);
+
+    // Refresh search on editor input
+    editorLeft.addEventListener('input', () => searchLeft.refresh());
+    editorRight.addEventListener('input', () => searchRight.refresh());
+
+    // Ctrl+F: open search for whichever pane was last focused
+    let lastFocusedEditor = editorLeft;
+    editorLeft.addEventListener('focus', () => { lastFocusedEditor = editorLeft; });
+    editorRight.addEventListener('focus', () => { lastFocusedEditor = editorRight; });
 
     // ─────────────────────────────────────────────────────────
     //  TOAST SYSTEM
@@ -238,6 +465,10 @@
                 updateStats(result.stats);
                 copyDiffBtn.disabled = false;
                 downloadBtn.disabled = false;
+
+                // Refresh search visuals to match new content/indices
+                searchLeft?.refresh();
+                searchRight?.refresh();
 
                 // Build suggestion panel from hunks
                 buildSuggestions(result.hunks);
@@ -672,224 +903,6 @@
         }
     });
 
-    // ─────────────────────────────────────────────────────────
-    //  PER-PANE SEARCH
-    // ─────────────────────────────────────────────────────────
-    class PaneSearch {
-        constructor(side, editor) {
-            this.side = side;
-            this.editor = editor;
-            this.matches = [];
-            this.current = -1;
-
-            this.bar = $(`searchBar${side}`);
-            this.input = $(`searchInput${side}`);
-            this.countEl = $(`searchCount${side}`);
-            this.caseChk = $(`searchCase${side}`);
-            this.wordChk = $(`searchWord${side}`);
-            this.regexChk = $(`searchRegex${side}`);
-            this.prevBtn = $(`searchPrev${side}`);
-            this.nextBtn = $(`searchNext${side}`);
-            this.closeBtn = $(`searchClose${side}`);
-            this.toggleBtn = $(`searchToggle${side}`);
-
-            this.highlightsEl = $(`editorHighlights${side}`);
-            this.markersEl = $(`editorMarkers${side}`);
-
-            this._bind();
-        }
-
-        _bind() {
-            if (this.toggleBtn) this.toggleBtn.addEventListener('click', () => this.open());
-            this.closeBtn.addEventListener('click', () => this.close());
-
-            this.input.addEventListener('input', () => this._search());
-            this.caseChk.addEventListener('change', () => this._search());
-            this.wordChk.addEventListener('change', () => this._search());
-            this.regexChk.addEventListener('change', () => this._search());
-
-            this.prevBtn.addEventListener('click', () => this._navigate(-1));
-            this.nextBtn.addEventListener('click', () => this._navigate(1));
-
-            this.input.addEventListener('keydown', e => {
-                if (e.key === 'Enter') { e.preventDefault(); this._navigate(e.shiftKey ? -1 : 1, true); }
-                if (e.key === 'Escape') this.close();
-            });
-
-            // Scroll Sync for Highlights
-            this.editor.addEventListener('scroll', () => {
-                if (this.highlightsEl) this.highlightsEl.scrollTop = this.editor.scrollTop;
-            });
-
-            // Marker Clicks
-            this.markersEl.addEventListener('click', e => {
-                const marker = e.target.closest('.search-marker');
-                if (marker) {
-                    const idx = parseInt(marker.dataset.idx, 10);
-                    this.current = idx;
-                    this._jumpTo(idx, true);
-                    this._updateCount();
-                    this._renderVisuals();
-                }
-            });
-        }
-
-        open() {
-            this.bar.hidden = false;
-            this.input.focus();
-            this.input.select();
-            this._search();
-        }
-
-        close() {
-            this.bar.hidden = true;
-            this.matches = [];
-            this.current = -1;
-            this._updateCount();
-            this._renderVisuals(); // Clear visuals
-            this.editor.focus();
-        }
-
-        isOpen() { return !this.bar.hidden; }
-
-        _buildRegex() {
-            const term = this.input.value;
-            if (!term) return null;
-            const flags = this.caseChk.checked ? 'g' : 'gi';
-            if (this.regexChk.checked) return new RegExp(term, flags);
-            let esc = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            if (this.wordChk.checked) esc = `\\b${esc}\\b`;
-            return new RegExp(esc, flags);
-        }
-
-        _search(autoJump = false) {
-            this.matches = [];
-            this.current = -1;
-            this.countEl.classList.remove('no-match');
-
-            const regex = this._buildRegex();
-            if (!regex) {
-                this._updateCount();
-                this._renderVisuals();
-                return;
-            }
-
-            try {
-                const text = this.editor.value;
-                let m;
-                // Use a copy to avoid regex state issues with exec
-                const searchRegex = new RegExp(regex.source, regex.flags);
-                while ((m = searchRegex.exec(text)) !== null) {
-                    this.matches.push({ start: m.index, end: m.index + m[0].length });
-                    if (this.matches.length > 5000) break;
-                    if (m.index === searchRegex.lastIndex) searchRegex.lastIndex++;
-                }
-            } catch {
-                this.countEl.textContent = 'Invalid regex';
-                this.countEl.classList.add('no-match');
-                this._renderVisuals();
-                return;
-            }
-
-            if (this.matches.length > 0) {
-                this.current = 0;
-                if (autoJump) this._jumpTo(0, true);
-            } else if (this.input.value) {
-                this.countEl.classList.add('no-match');
-            }
-
-            this._updateCount();
-            this._renderVisuals();
-        }
-
-        _navigate(dir, focusInput = false) {
-            if (this.matches.length === 0) return;
-            this.current = (this.current + dir + this.matches.length) % this.matches.length;
-            this._jumpTo(this.current, !focusInput);
-            if (focusInput) this.input.focus();
-            this._updateCount();
-            this._renderVisuals();
-        }
-
-        _jumpTo(idx, focusEditor = false) {
-            const match = this.matches[idx];
-            if (!match) return;
-
-            if (focusEditor) this.editor.focus();
-            this.editor.setSelectionRange(match.start, match.end);
-
-            const textToMatch = this.editor.value.substring(0, match.start);
-            const lineNum = textToMatch.split(/\r?\n/).length;
-            const lineHeight = parseFloat(getComputedStyle(this.editor).lineHeight) || 19;
-            const targetScroll = Math.max(0, (lineNum - 3) * lineHeight);
-            this.editor.scrollTop = targetScroll;
-            this.highlightsEl.scrollTop = targetScroll;
-        }
-
-        _updateCount() {
-            if (!this.input.value) {
-                this.countEl.textContent = '';
-            } else if (this.matches.length === 0) {
-                this.countEl.textContent = 'No results';
-            } else {
-                this.countEl.textContent = `${this.current + 1} / ${this.matches.length}`;
-            }
-            this.prevBtn.disabled = this.matches.length === 0;
-            this.nextBtn.disabled = this.matches.length === 0;
-        }
-
-        _renderVisuals() {
-            if (!this.isOpen() || this.matches.length === 0) {
-                this.highlightsEl.innerHTML = '';
-                this.markersEl.innerHTML = '';
-                return;
-            }
-
-            const text = this.editor.value;
-            let html = '';
-            let markersHtml = '';
-            let lastIdx = 0;
-
-            const totalLen = text.length || 1;
-
-            this.matches.forEach((m, i) => {
-                // Highlights
-                html += DiffEngine.escape(text.substring(lastIdx, m.start));
-                const isCurrent = (i === this.current);
-                html += `<mark class="${isCurrent ? 'current' : ''}">${DiffEngine.escape(text.substring(m.start, m.end))}</mark>`;
-                lastIdx = m.end;
-
-                // Markers (Scrollbar)
-                const top = (m.start / totalLen) * 100;
-                markersHtml += `<div class="search-marker" style="top:${top}%" data-idx="${i}"></div>`;
-            });
-            html += DiffEngine.escape(text.substring(lastIdx));
-
-            // The highlights div needs a trailing newline char if the textarea has one 
-            // to maintain perfect height alignment
-            if (text.endsWith('\n')) html += '\n';
-
-            this.highlightsEl.innerHTML = html;
-            this.markersEl.innerHTML = markersHtml;
-            this.highlightsEl.scrollTop = this.editor.scrollTop;
-        }
-
-        /** Called when editor content changes so match indices stay fresh */
-        refresh() { if (this.isOpen()) this._search(false); }
-    }
-
-    // Instantiate both search helpers
-    const searchLeft = new PaneSearch('Left', editorLeft);
-    const searchRight = new PaneSearch('Right', editorRight);
-
-    // Refresh search on editor input
-    editorLeft.addEventListener('input', () => searchLeft.refresh());
-    editorRight.addEventListener('input', () => searchRight.refresh());
-
-    // Ctrl+F: open search for whichever pane was last focused
-    let lastFocusedEditor = editorLeft;
-    editorLeft.addEventListener('focus', () => { lastFocusedEditor = editorLeft; });
-    editorRight.addEventListener('focus', () => { lastFocusedEditor = editorRight; });
 
     // ─────────────────────────────────────────────────────────
     //  KEYBOARD SHORTCUTS MODAL

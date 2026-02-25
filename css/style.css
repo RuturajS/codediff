@@ -480,8 +480,8 @@ body {
 .code-editor {
   width: 100%;
   height: 100%;
-  background: transparent;
-  /* Transparent to show highlights behind */
+  background: transparent !important;
+  /* Force transparent to show highlights behind */
   color: var(--text);
   border: none;
   outline: none;
@@ -492,6 +492,10 @@ body {
   line-height: 1.6;
   tab-size: 2;
   overflow: auto;
+  white-space: pre-wrap;
+  /* Match backdrop wrapping */
+  word-wrap: break-word;
+  /* Match backdrop wrapping */
   caret-color: var(--accent);
   position: relative;
   z-index: 3;
@@ -520,16 +524,18 @@ body {
 }
 
 .editor-highlights mark {
-  background-color: rgba(255, 255, 0, 0.4);
-  /* Yellow highlight for all matches */
+  background-color: rgba(234, 179, 8, 0.4);
+  /* Brighter yellow (Tailwind amber-500 equivalent) */
   color: transparent;
   border-bottom: 2px solid #eab308;
 }
 
 .editor-highlights mark.current {
   background-color: var(--accent);
-  /* Accent for current match */
+  color: #fff;
+  /* Active match should be readable */
   border-bottom: 2px solid transparent;
+  box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.5);
 }
 
 /* Scroll Markers (Minimap-like) */
