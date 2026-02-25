@@ -1317,6 +1317,40 @@ body.fullscreen-editor .app-header {
   transition: transform 0.2s;
 }
 
+.suggestion-item.json-suggestion {
+  border-left: 3px solid var(--accent);
+}
+
+.suggestion-item.json-suggestion.error {
+  border-left-color: var(--diff-removed-text);
+  background: rgba(var(--diff-removed-bg-rgb), 0.05);
+}
+
+.suggestion-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.suggestion-title {
+  font-weight: 600;
+  color: var(--text);
+  font-size: 0.8rem;
+}
+
+.suggestion-sub {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+}
+
+.suggestion-error-msg {
+  color: var(--diff-removed-text);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  opacity: 0.9;
+}
+
 /* ============================================================
    RESPONSIVE
    ============================================================ */

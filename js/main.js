@@ -232,7 +232,13 @@
                 showToast(`Compare failed: ${err.message}`, 'error');
                 console.error('[Codediff] Compare error:', err);
             } finally {
-                if (showLoadAnim) { compareBtn.classList.remove('loading'); isComparing = false; }
+                if (showLoadAnim) {
+                    compareBtn.classList.add('fade-out');
+                    setTimeout(() => {
+                        compareBtn.classList.remove('loading', 'fade-out');
+                        isComparing = false;
+                    }, 260);
+                }
             }
         }, showLoadAnim ? 10 : 0);
     }
@@ -259,7 +265,10 @@
                 }
             } catch (e) {
                 // Looks like JSON but is malformed
-                return { side, label, error: e.message };
+                let msg = e.message;
+                // Attempt to extract position for better feedback
+                const posMatch = msg.match(/position (\d+)/);
+                return { side, label, error: msg, pos: posMatch ? parseInt(posMatch[1], 10) : null };
             }
             return null;
         };
@@ -268,33 +277,45 @@
         const sugR = suggestFormat('Right', editorRight, 'Right');
 
         if (sugL || sugR) {
-            if (suggestionPanel.hidden) {
-                suggestionPanel.hidden = false;
-                suggestionList.innerHTML = '';
-            }
+            // Don't hide the panel if line-diff suggestions are already there
+            suggestionPanel.hidden = false;
 
             [sugL, sugR].forEach(s => {
                 if (!s) return;
                 const item = document.createElement('div');
                 item.className = 'suggestion-item json-suggestion';
-                item.style.borderLeft = '3px solid var(--accent)';
 
                 if (s.error) {
+                    item.classList.add('error');
                     item.innerHTML = `
             <span class="suggestion-line-num">JSON</span>
-            <span class="suggestion-old" style="text-decoration:none; color:var(--diff-removed-text)">${s.label} pane has malformed JSON</span>
-            <span class="suggestion-arrow" title="${DiffEngine.escape(s.error)}">ⓘ</span>
+            <div class="suggestion-content">
+              <span class="suggestion-title">${s.label} pane has malformed JSON</span>
+              <span class="suggestion-error-msg">${DiffEngine.escape(s.error)}</span>
+            </div>
             <div class="suggestion-actions">
-              <span style="font-size:0.7rem; color:var(--text-faint)">Fix manually</span>
+              ${s.pos !== null ? `<button class="suggestion-jump-btn" data-side="${s.side}" data-pos="${s.pos}">Show Error</button>` : ''}
             </div>`;
+
+                    const jumpBtn = item.querySelector('.suggestion-jump-btn');
+                    if (jumpBtn) {
+                        jumpBtn.onclick = () => {
+                            const edt = s.side === 'Left' ? editorLeft : editorRight;
+                            edt.focus();
+                            edt.setSelectionRange(s.pos, s.pos + 1);
+                            const line = edt.value.substring(0, s.pos).split('\n').length;
+                            edt.scrollTop = (line - 3) * 20;
+                        };
+                    }
                 } else {
                     item.innerHTML = `
             <span class="suggestion-line-num">JSON</span>
-            <span class="suggestion-old" style="text-decoration:none">JSON indentation in ${s.label} pane is missing/incorrect</span>
-            <span class="suggestion-arrow">→</span>
-            <span class="suggestion-new">Format JSON</span>
+            <div class="suggestion-content">
+              <span class="suggestion-title">JSON in ${s.label} pane is minified or messy</span>
+              <span class="suggestion-sub">Indentation can be fixed for better comparison</span>
+            </div>
             <div class="suggestion-actions">
-              <button class="suggestion-apply-btn json-fix-btn" data-side="${s.side}">Apply Fix</button>
+              <button class="suggestion-apply-btn json-fix-btn" data-side="${s.side}">Format JSON</button>
             </div>`;
 
                     item.querySelector('.json-fix-btn').onclick = () => {
@@ -310,25 +331,11 @@
     }
 
     // ─────────────────────────────────────────────────────────
-    //  STATS
-    // ─────────────────────────────────────────────────────────
-    function updateStats({ added, removed, changed }) {
-        statAddedCount.textContent = added;
-        statRemovedCount.textContent = removed;
-        statChangedCount.textContent = changed;
-    }
-
-    function resetStats() {
-        statAddedCount.textContent = '0';
-        statRemovedCount.textContent = '0';
-        statChangedCount.textContent = '0';
-    }
-
-    // ─────────────────────────────────────────────────────────
-    //  SUGGESTION PANEL
+    //  SUGGESTION PANEL: LINE DIFFS
     // ─────────────────────────────────────────────────────────
     function buildSuggestions(hunks) {
         suggestionData = [];
+        suggestionList.innerHTML = ''; // Start fresh on each compare
         let lLine = 1, rLine = 1;
 
         for (const h of hunks) {
