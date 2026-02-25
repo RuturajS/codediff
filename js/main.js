@@ -684,7 +684,7 @@
         }
 
         _bind() {
-            this.toggleBtn.addEventListener('click', () => this.open());
+            if (this.toggleBtn) this.toggleBtn.addEventListener('click', () => this.open());
             this.closeBtn.addEventListener('click', () => this.close());
 
             this.input.addEventListener('input', () => this._search());
