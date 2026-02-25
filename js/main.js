@@ -75,6 +75,22 @@
     let suggestionsCollapsed = false;
 
     // ─────────────────────────────────────────────────────────
+    //  STATS SYSTEM
+    // ─────────────────────────────────────────────────────────
+    function updateStats(stats) {
+        if (!stats) return;
+        if (statAddedCount) statAddedCount.textContent = stats.added || 0;
+        if (statRemovedCount) statRemovedCount.textContent = stats.removed || 0;
+        if (statChangedCount) statChangedCount.textContent = stats.changed || 0;
+    }
+
+    function resetStats() {
+        if (statAddedCount) statAddedCount.textContent = '0';
+        if (statRemovedCount) statRemovedCount.textContent = '0';
+        if (statChangedCount) statChangedCount.textContent = '0';
+    }
+
+    // ─────────────────────────────────────────────────────────
     //  TOAST SYSTEM
     // ─────────────────────────────────────────────────────────
     function showToast(message, type = 'info', duration = 2800) {
