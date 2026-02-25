@@ -524,8 +524,8 @@ body {
 }
 
 .editor-highlights mark {
-  background-color: rgba(234, 179, 8, 0.4);
-  /* Brighter yellow (Tailwind amber-500 equivalent) */
+  background-color: rgba(234, 179, 8, 0.7);
+  /* More opaque amber-500 */
   color: transparent;
   border-bottom: 2px solid #eab308;
 }
@@ -533,9 +533,9 @@ body {
 .editor-highlights mark.current {
   background-color: var(--accent);
   color: #fff;
-  /* Active match should be readable */
+  /* Active match text visible in backdrop for extra sharpness */
   border-bottom: 2px solid transparent;
-  box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.5);
+  box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.6);
 }
 
 /* Scroll Markers (Minimap-like) */
