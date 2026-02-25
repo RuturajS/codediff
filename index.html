@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description"
+        content="Codediff — A professional, browser-based code diff tool with side-by-side comparison, syntax highlighting, file upload, and real-time diff rendering." />
+    <meta name="keywords" content="code diff, code compare, diff tool, side by side diff, JSON diff, file diff" />
+    <meta property="og:title" content="Codediff — Code Difference Viewer" />
+    <meta property="og:description"
+        content="Compare code side-by-side with instant highlighting of additions, removals, and modifications." />
+    <meta property="og:type" content="website" />
+
+    <title>Codediff — Code Difference Viewer</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet" />
+
+    <link rel="stylesheet" href="css/style.css" />
+</head>
+
+<body>
+
+    <!-- ===== HEADER / NAVBAR ===== -->
+    <header class="app-header" role="banner">
+        <div class="header-left">
+            <span class="logo" aria-label="Codediff Logo">
+                <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"
+                    aria-hidden="true">
+                    <rect width="28" height="28" rx="6" fill="var(--accent)" />
+                    <path d="M8 9L4 14L8 19" stroke="white" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                    <path d="M20 9L24 14L20 19" stroke="white" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                    <line x1="11" y1="18" x2="17" y2="10" stroke="white" stroke-width="2" stroke-linecap="round" />
+                </svg>
+            </span>
+            <h1 class="app-title">Code<span class="accent-text">diff</span></h1>
+        </div>
+
+        <div class="header-center">
+            <div class="diff-stats" id="diffStats" aria-live="polite" role="status">
+                <span class="stat added" id="statAdded" title="Lines added">
+                    <span class="stat-icon">+</span><span id="statAddedCount">0</span>
+                </span>
+                <span class="stat removed" id="statRemoved" title="Lines removed">
+                    <span class="stat-icon">−</span><span id="statRemovedCount">0</span>
+                </span>
+                <span class="stat changed" id="statChanged" title="Lines changed">
+                    <span class="stat-icon">~</span><span id="statChangedCount">0</span>
+                </span>
+            </div>
+        </div>
+
+        <div class="header-right">
+            <label class="option-label" title="Ignore whitespace differences">
+                <input type="checkbox" id="ignoreWhitespace" /> Ignore Whitespace
+            </label>
+            <label class="option-label" title="Normalize JSON before comparing">
+                <input type="checkbox" id="jsonMode" /> JSON Mode
+            </label>
+            <button id="themeToggle" class="btn btn-ghost" title="Toggle theme (Ctrl+Shift+T)"
+                aria-label="Toggle dark/light theme">
+                <svg id="themeIconMoon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                </svg>
+                <svg id="themeIconSun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+                    <circle cx="12" cy="12" r="5" />
+                    <line x1="12" y1="1" x2="12" y2="3" />
+                    <line x1="12" y1="21" x2="12" y2="23" />
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                    <line x1="1" y1="12" x2="3" y2="12" />
+                    <line x1="21" y1="12" x2="23" y2="12" />
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+                </svg>
+                <span class="theme-label" id="themeLabelText">Light</span>
+            </button>
+            <button id="fullscreenBtn" class="btn btn-ghost" title="Toggle fullscreen (F11)"
+                aria-label="Toggle fullscreen">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="15 3 21 3 21 9" />
+                    <polyline points="9 21 3 21 3 15" />
+                    <line x1="21" y1="3" x2="14" y2="10" />
+                    <line x1="3" y1="21" x2="10" y2="14" />
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- ===== MAIN WORKSPACE ===== -->
+    <main class="workspace" id="workspace" role="main">
+
+        <!-- Editor Panes -->
+        <section class="editors-row" id="editorsRow" aria-label="Code editors">
+
+            <!-- LEFT PANE -->
+            <div class="pane" id="paneLeft" role="region" aria-label="Original code (left)">
+                <div class="pane-header">
+                    <span class="pane-label">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.5">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                            <polyline points="14 2 14 8 20 8" />
+                        </svg>
+                        Original
+                    </span>
+                    <div class="pane-actions">
+                        <span class="file-name-badge" id="fileNameLeft">No file loaded</span>
+                        <label class="btn btn-sm btn-ghost" title="Upload file for left pane">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                <polyline points="17 8 12 3 7 8" />
+                                <line x1="12" y1="3" x2="12" y2="15" />
+                            </svg>
+                            Upload
+                            <input type="file" id="fileInputLeft"
+                                accept=".js,.py,.java,.json,.txt,.html,.htm,.css,.xml,.log,.ts,.tsx,.jsx,.csv,.yaml,.yml,.md,.sh,.rb,.go,.rs,.c,.cpp,.h"
+                                hidden />
+                        </label>
+                        <button class="btn btn-sm btn-ghost" id="clearLeft" title="Clear left pane">Clear</button>
+                    </div>
+                </div>
+
+                <div class="drop-zone" id="dropZoneLeft" aria-label="Drop file here or paste code">
+                    <div class="drop-zone-hint" id="dropHintLeft" aria-hidden="true">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.5">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="17 8 12 3 7 8" />
+                            <line x1="12" y1="3" x2="12" y2="15" />
+                        </svg>
+                        <p>Drop file or paste code</p>
+                    </div>
+                    <textarea id="editorLeft" class="code-editor" placeholder="Paste or type original code here…"
+                        spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"
+                        aria-label="Original code input"></textarea>
+                </div>
+            </div>
+
+            <!-- RESIZER -->
+            <div class="resizer" id="resizer" role="separator" aria-orientation="vertical" aria-label="Resize panes"
+                tabindex="0"></div>
+
+            <!-- RIGHT PANE -->
+            <div class="pane" id="paneRight" role="region" aria-label="Modified code (right)">
+                <div class="pane-header">
+                    <span class="pane-label">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.5">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                            <polyline points="14 2 14 8 20 8" />
+                        </svg>
+                        Modified
+                    </span>
+                    <div class="pane-actions">
+                        <span class="file-name-badge" id="fileNameRight">No file loaded</span>
+                        <label class="btn btn-sm btn-ghost" title="Upload file for right pane">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                <polyline points="17 8 12 3 7 8" />
+                                <line x1="12" y1="3" x2="12" y2="15" />
+                            </svg>
+                            Upload
+                            <input type="file" id="fileInputRight"
+                                accept=".js,.py,.java,.json,.txt,.html,.htm,.css,.xml,.log,.ts,.tsx,.jsx,.csv,.yaml,.yml,.md,.sh,.rb,.go,.rs,.c,.cpp,.h"
+                                hidden />
+                        </label>
+                        <button class="btn btn-sm btn-ghost" id="clearRight" title="Clear right pane">Clear</button>
+                    </div>
+                </div>
+
+                <div class="drop-zone" id="dropZoneRight" aria-label="Drop file here or paste code">
+                    <div class="drop-zone-hint" id="dropHintRight" aria-hidden="true">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.5">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="17 8 12 3 7 8" />
+                            <line x1="12" y1="3" x2="12" y2="15" />
+                        </svg>
+                        <p>Drop file or paste code</p>
+                    </div>
+                    <textarea id="editorRight" class="code-editor" placeholder="Paste or type modified code here…"
+                        spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"
+                        aria-label="Modified code input"></textarea>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- Action Bar -->
+        <div class="action-bar" id="actionBar" role="toolbar" aria-label="Diff controls">
+            <div class="action-bar-left">
+                <button class="btn btn-primary" id="compareBtn" title="Compare (Ctrl+Enter)">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.5">
+                        <circle cx="11" cy="11" r="8" />
+                        <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                    </svg>
+                    Compare
+                </button>
+                <button class="btn btn-secondary" id="clearAllBtn" title="Clear all (Ctrl+L)">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="3 6 5 6 21 6" />
+                        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                        <path d="M10 11v6" />
+                        <path d="M14 11v6" />
+                        <path d="M9 6V4h6v2" />
+                    </svg>
+                    Clear All
+                </button>
+                <button class="btn btn-secondary" id="swapBtn" title="Swap left and right content">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M7 16V4m0 0L3 8m4-4l4 4" />
+                        <path d="M17 8v12m0 0l4-4m-4 4l-4-4" />
+                    </svg>
+                    Swap
+                </button>
+            </div>
+            <div class="action-bar-right">
+                <button class="btn btn-ghost btn-sm" id="copyDiffBtn" title="Copy diff output" disabled>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="9" y="9" width="13" height="13" rx="2" />
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                    </svg>
+                    Copy Diff
+                </button>
+                <button class="btn btn-ghost btn-sm" id="downloadDiffBtn" title="Download diff as .diff file" disabled>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="7 10 12 15 17 10" />
+                        <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg>
+                    Download
+                </button>
+                <div class="view-toggle" role="group" aria-label="View mode">
+                    <button class="btn btn-sm view-btn active" id="viewSideBySide" data-view="sidebyside"
+                        title="Side by side view">Side by Side</button>
+                    <button class="btn btn-sm view-btn" id="viewInline" data-view="inline"
+                        title="Inline view">Inline</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Diff Output Section -->
+        <section class="diff-output-section" id="diffOutputSection" aria-label="Diff output">
+            <div class="diff-placeholder" id="diffPlaceholder">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                    opacity="0.4">
+                    <circle cx="11" cy="11" r="8" />
+                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+                <p>Paste code into both panes and click <strong>Compare</strong></p>
+                <kbd>Ctrl</kbd> + <kbd>Enter</kbd>
+            </div>
+            <div class="diff-output" id="diffOutput" role="table" aria-label="Diff results"></div>
+        </section>
+
+    </main>
+
+    <!-- ===== ABOUT FOOTER ===== -->
+    <footer class="app-footer" role="contentinfo">
+        <span>Built by
+            <a href="https://linkedin.com/in/ruturajsharbidre" target="_blank" rel="noopener noreferrer"
+                class="footer-link" aria-label="Ruturaj Sharbidre on LinkedIn">Ruturaj Sharbidre</a>
+        </span>
+        <span class="footer-sep" aria-hidden="true">·</span>
+        <span>Codediff</span>
+    </footer>
+
+    <!-- ===== TOAST NOTIFICATION ===== -->
+    <div class="toast-container" id="toastContainer" aria-live="assertive" aria-atomic="true"></div>
+
+    <!-- ===== KEYBOARD SHORTCUTS MODAL ===== -->
+    <div class="modal-overlay" id="shortcutsModal" role="dialog" aria-modal="true" aria-label="Keyboard shortcuts"
+        style="display:none">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Keyboard Shortcuts</h2>
+                <button class="modal-close" id="closeShortcuts" aria-label="Close">✕</button>
+            </div>
+            <div class="modal-body">
+                <table class="shortcuts-table">
+                    <tbody>
+                        <tr>
+                            <td><kbd>Ctrl</kbd> + <kbd>Enter</kbd></td>
+                            <td>Compare</td>
+                        </tr>
+                        <tr>
+                            <td><kbd>Ctrl</kbd> + <kbd>L</kbd></td>
+                            <td>Clear all</td>
+                        </tr>
+                        <tr>
+                            <td><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>T</kbd></td>
+                            <td>Toggle theme</td>
+                        </tr>
+                        <tr>
+                            <td><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>S</kbd></td>
+                            <td>Swap panes</td>
+                        </tr>
+                        <tr>
+                            <td><kbd>Ctrl</kbd> + <kbd>D</kbd></td>
+                            <td>Download diff</td>
+                        </tr>
+                        <tr>
+                            <td><kbd>?</kbd></td>
+                            <td>Show shortcuts</td>
+                        </tr>
+                        <tr>
+                            <td><kbd>Esc</kbd></td>
+                            <td>Close modal</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script src="js/theme.js"></script>
+    <script src="js/diff-engine.js"></script>
+    <script src="js/main.js"></script>
+</body>
+
+</html>
