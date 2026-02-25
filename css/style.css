@@ -480,7 +480,8 @@ body {
 .code-editor {
   width: 100%;
   height: 100%;
-  background: var(--surface);
+  background: transparent;
+  /* Transparent to show highlights behind */
   color: var(--text);
   border: none;
   outline: none;
@@ -492,11 +493,74 @@ body {
   tab-size: 2;
   overflow: auto;
   caret-color: var(--accent);
-  transition: background var(--transition-med), color var(--transition-med);
+  position: relative;
+  z-index: 3;
+  transition: color var(--transition-med);
 }
 
 .code-editor::placeholder {
   color: var(--text-faint);
+}
+
+/* Search Highlights Backdrop */
+.editor-highlights {
+  position: absolute;
+  inset: 0;
+  padding: 12px 14px;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  color: transparent;
+  pointer-events: none;
+  z-index: 2;
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.editor-highlights mark {
+  background-color: rgba(255, 255, 0, 0.4);
+  /* Yellow highlight for all matches */
+  color: transparent;
+  border-bottom: 2px solid #eab308;
+}
+
+.editor-highlights mark.current {
+  background-color: var(--accent);
+  /* Accent for current match */
+  border-bottom: 2px solid transparent;
+}
+
+/* Scroll Markers (Minimap-like) */
+.editor-markers {
+  position: absolute;
+  top: 12px;
+  bottom: 12px;
+  right: 0px;
+  width: 5px;
+  z-index: 10;
+  pointer-events: auto;
+  cursor: crosshair;
+}
+
+.search-marker {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: #ef4444;
+  /* Small red marker */
+  border-radius: 1px;
+  box-shadow: 0 0 4px rgba(239, 68, 68, 0.5);
+  transition: transform 0.1s;
+  cursor: pointer;
+}
+
+.search-marker:hover {
+  transform: scaleY(3);
+  background-color: #f87171;
+  z-index: 11;
 }
 
 /* Border between panes */
@@ -1207,7 +1271,8 @@ body.fullscreen-editor .app-header {
    ============================================================ */
 .suggestion-panel {
   position: absolute;
-  bottom: 0;
+  bottom: 28px;
+  /* Room for footer */
   left: 0;
   right: 0;
   background: var(--surface);
@@ -1437,6 +1502,8 @@ body.fullscreen-editor .app-header {
   flex-shrink: 0;
   user-select: none;
   letter-spacing: 0.01em;
+  position: relative;
+  z-index: 101;
 }
 
 .footer-link {

@@ -678,21 +678,44 @@
             this.closeBtn = $(`searchClose${side}`);
             this.toggleBtn = $(`searchToggle${side}`);
 
+            this.highlightsEl = $(`editorHighlights${side}`);
+            this.markersEl = $(`editorMarkers${side}`);
+
             this._bind();
         }
 
         _bind() {
             this.toggleBtn.addEventListener('click', () => this.open());
             this.closeBtn.addEventListener('click', () => this.close());
+
             this.input.addEventListener('input', () => this._search());
             this.caseChk.addEventListener('change', () => this._search());
             this.wordChk.addEventListener('change', () => this._search());
             this.regexChk.addEventListener('change', () => this._search());
+
             this.prevBtn.addEventListener('click', () => this._navigate(-1));
             this.nextBtn.addEventListener('click', () => this._navigate(1));
+
             this.input.addEventListener('keydown', e => {
                 if (e.key === 'Enter') { e.preventDefault(); this._navigate(e.shiftKey ? -1 : 1, true); }
                 if (e.key === 'Escape') this.close();
+            });
+
+            // Scroll Sync for Highlights
+            this.editor.addEventListener('scroll', () => {
+                if (this.highlightsEl) this.highlightsEl.scrollTop = this.editor.scrollTop;
+            });
+
+            // Marker Clicks
+            this.markersEl.addEventListener('click', e => {
+                const marker = e.target.closest('.search-marker');
+                if (marker) {
+                    const idx = parseInt(marker.dataset.idx, 10);
+                    this.current = idx;
+                    this._jumpTo(idx, true);
+                    this._updateCount();
+                    this._renderVisuals();
+                }
             });
         }
 
@@ -708,6 +731,7 @@
             this.matches = [];
             this.current = -1;
             this._updateCount();
+            this._renderVisuals(); // Clear visuals
             this.editor.focus();
         }
 
@@ -729,20 +753,26 @@
             this.countEl.classList.remove('no-match');
 
             const regex = this._buildRegex();
-            if (!regex) { this._updateCount(); return; }
+            if (!regex) {
+                this._updateCount();
+                this._renderVisuals();
+                return;
+            }
 
             try {
                 const text = this.editor.value;
                 let m;
-                while ((m = regex.exec(text)) !== null) {
+                // Use a copy to avoid regex state issues with exec
+                const searchRegex = new RegExp(regex.source, regex.flags);
+                while ((m = searchRegex.exec(text)) !== null) {
                     this.matches.push({ start: m.index, end: m.index + m[0].length });
                     if (this.matches.length > 5000) break;
-                    // Prevent infinite loop on zero-width matches
-                    if (m.index === regex.lastIndex) regex.lastIndex++;
+                    if (m.index === searchRegex.lastIndex) searchRegex.lastIndex++;
                 }
             } catch {
                 this.countEl.textContent = 'Invalid regex';
                 this.countEl.classList.add('no-match');
+                this._renderVisuals();
                 return;
             }
 
@@ -754,6 +784,7 @@
             }
 
             this._updateCount();
+            this._renderVisuals();
         }
 
         _navigate(dir, focusInput = false) {
@@ -762,6 +793,7 @@
             this._jumpTo(this.current, !focusInput);
             if (focusInput) this.input.focus();
             this._updateCount();
+            this._renderVisuals();
         }
 
         _jumpTo(idx, focusEditor = false) {
@@ -769,17 +801,14 @@
             if (!match) return;
 
             if (focusEditor) this.editor.focus();
-
             this.editor.setSelectionRange(match.start, match.end);
 
-            // Scroll the match into view
             const textToMatch = this.editor.value.substring(0, match.start);
             const lineNum = textToMatch.split(/\r?\n/).length;
             const lineHeight = parseFloat(getComputedStyle(this.editor).lineHeight) || 19;
-
-            // Use a smoother scroll if possible, or just set scrollTop
             const targetScroll = Math.max(0, (lineNum - 3) * lineHeight);
             this.editor.scrollTop = targetScroll;
+            this.highlightsEl.scrollTop = targetScroll;
         }
 
         _updateCount() {
@@ -792,6 +821,42 @@
             }
             this.prevBtn.disabled = this.matches.length === 0;
             this.nextBtn.disabled = this.matches.length === 0;
+        }
+
+        _renderVisuals() {
+            if (!this.isOpen() || this.matches.length === 0) {
+                this.highlightsEl.innerHTML = '';
+                this.markersEl.innerHTML = '';
+                return;
+            }
+
+            const text = this.editor.value;
+            let html = '';
+            let markersHtml = '';
+            let lastIdx = 0;
+
+            const totalLen = text.length || 1;
+
+            this.matches.forEach((m, i) => {
+                // Highlights
+                html += DiffEngine.escape(text.substring(lastIdx, m.start));
+                const isCurrent = (i === this.current);
+                html += `<mark class="${isCurrent ? 'current' : ''}">${DiffEngine.escape(text.substring(m.start, m.end))}</mark>`;
+                lastIdx = m.end;
+
+                // Markers (Scrollbar)
+                const top = (m.start / totalLen) * 100;
+                markersHtml += `<div class="search-marker" style="top:${top}%" data-idx="${i}"></div>`;
+            });
+            html += DiffEngine.escape(text.substring(lastIdx));
+
+            // The highlights div needs a trailing newline char if the textarea has one 
+            // to maintain perfect height alignment
+            if (text.endsWith('\n')) html += '\n';
+
+            this.highlightsEl.innerHTML = html;
+            this.markersEl.innerHTML = markersHtml;
+            this.highlightsEl.scrollTop = this.editor.scrollTop;
         }
 
         /** Called when editor content changes so match indices stay fresh */
