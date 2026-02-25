@@ -405,7 +405,7 @@
     }
 
     function applyLineChange(lineNum, newVal) {
-        const lines = editorLeft.value.split('\n');
+        const lines = editorLeft.value.split(/\r?\n/);
         if (lineNum >= 1 && lineNum <= lines.length) {
             lines[lineNum - 1] = newVal;
             editorLeft.value = lines.join('\n');
@@ -415,7 +415,7 @@
 
     applyAllBtn?.addEventListener('click', () => {
         if (suggestionData.length === 0) return;
-        const lines = editorLeft.value.split('\n');
+        const lines = editorLeft.value.split(/\r?\n/);
         // Apply from bottom to top so line numbers stay correct
         [...suggestionData].sort((a, b) => b.lLineNum - a.lLineNum).forEach(s => {
             if (s.lLineNum >= 1 && s.lLineNum <= lines.length) lines[s.lLineNum - 1] = s.newVal;
@@ -677,7 +677,7 @@
             this.prevBtn.addEventListener('click', () => this._navigate(-1));
             this.nextBtn.addEventListener('click', () => this._navigate(1));
             this.input.addEventListener('keydown', e => {
-                if (e.key === 'Enter') { e.preventDefault(); this._navigate(e.shiftKey ? -1 : 1); }
+                if (e.key === 'Enter') { e.preventDefault(); this._navigate(e.shiftKey ? -1 : 1, true); }
                 if (e.key === 'Escape') this.close();
             });
         }
@@ -709,7 +709,7 @@
             return new RegExp(esc, flags);
         }
 
-        _search() {
+        _search(autoJump = false) {
             this.matches = [];
             this.current = -1;
             this.countEl.classList.remove('no-match');
@@ -723,6 +723,8 @@
                 while ((m = regex.exec(text)) !== null) {
                     this.matches.push({ start: m.index, end: m.index + m[0].length });
                     if (this.matches.length > 5000) break;
+                    // Prevent infinite loop on zero-width matches
+                    if (m.index === regex.lastIndex) regex.lastIndex++;
                 }
             } catch {
                 this.countEl.textContent = 'Invalid regex';
@@ -732,7 +734,7 @@
 
             if (this.matches.length > 0) {
                 this.current = 0;
-                this._jumpTo(0);
+                if (autoJump) this._jumpTo(0, true);
             } else if (this.input.value) {
                 this.countEl.classList.add('no-match');
             }
@@ -740,22 +742,30 @@
             this._updateCount();
         }
 
-        _navigate(dir) {
+        _navigate(dir, focusInput = false) {
             if (this.matches.length === 0) return;
             this.current = (this.current + dir + this.matches.length) % this.matches.length;
-            this._jumpTo(this.current);
+            this._jumpTo(this.current, !focusInput);
+            if (focusInput) this.input.focus();
             this._updateCount();
         }
 
-        _jumpTo(idx) {
+        _jumpTo(idx, focusEditor = false) {
             const match = this.matches[idx];
             if (!match) return;
-            this.editor.focus();
+
+            if (focusEditor) this.editor.focus();
+
             this.editor.setSelectionRange(match.start, match.end);
+
             // Scroll the match into view
-            const lineNum = this.editor.value.substring(0, match.start).split('\n').length;
-            const lineHeight = parseFloat(getComputedStyle(this.editor).lineHeight) || 18;
-            this.editor.scrollTop = Math.max(0, (lineNum - 3) * lineHeight);
+            const textToMatch = this.editor.value.substring(0, match.start);
+            const lineNum = textToMatch.split(/\r?\n/).length;
+            const lineHeight = parseFloat(getComputedStyle(this.editor).lineHeight) || 19;
+
+            // Use a smoother scroll if possible, or just set scrollTop
+            const targetScroll = Math.max(0, (lineNum - 3) * lineHeight);
+            this.editor.scrollTop = targetScroll;
         }
 
         _updateCount() {
@@ -771,7 +781,7 @@
         }
 
         /** Called when editor content changes so match indices stay fresh */
-        refresh() { if (this.isOpen()) this._search(); }
+        refresh() { if (this.isOpen()) this._search(false); }
     }
 
     // Instantiate both search helpers
@@ -939,13 +949,18 @@ function calculateCircumference(radius) {
         runCompare(false);
     }
 
-    // ─────────────────────────────────────────────────────────
-    //  INIT
-    // ─────────────────────────────────────────────────────────
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => setTimeout(loadSample, 100));
-    } else {
+    function init() {
+        // Sync View Mode UI classes
+        viewSideBySide.classList.toggle('active', currentViewMode === 'sidebyside');
+        viewInline.classList.toggle('active', currentViewMode === 'inline');
+
         setTimeout(loadSample, 100);
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
     }
 
 })();
