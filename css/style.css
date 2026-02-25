@@ -593,7 +593,7 @@ body {
    DIFF OUTPUT SECTION
    ============================================================ */
 .diff-output-section {
-  flex: 1.2;
+  flex: 1.5;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -1349,6 +1349,23 @@ body.fullscreen-editor .app-header {
   font-family: var(--font-mono);
   font-size: 0.72rem;
   opacity: 0.9;
+}
+
+/* ============================================================
+   FOCUS DIFF MODE
+   ============================================================ */
+.workspace.focus-diff .editors-row,
+.workspace.focus-diff .diff-v-resizer {
+  display: none;
+}
+
+.workspace.focus-diff .diff-output-section {
+  flex: 1 !important;
+}
+
+#focusDiffBtn.active {
+  background: var(--accent);
+  color: #fff;
 }
 
 /* ============================================================

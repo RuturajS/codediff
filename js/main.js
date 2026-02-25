@@ -29,6 +29,7 @@
     const swapBtn = $('swapBtn');
     const copyDiffBtn = $('copyDiffBtn');
     const downloadBtn = $('downloadDiffBtn');
+    const focusDiffBtn = $('focusDiffBtn');
     const copyAllLeft = $('copyAllLeft');
     const copyAllRight = $('copyAllRight');
     const diffOutput = $('diffOutput');
@@ -490,6 +491,19 @@
         viewInline.classList.toggle('active', mode === 'inline');
         if (editorLeft.value.trim() && editorRight.value.trim()) runCompare(false);
     }
+
+    // ─────────────────────────────────────────────────────────
+    //  FOCUS DIFF (MAXIMIZE)
+    // ─────────────────────────────────────────────────────────
+    focusDiffBtn.addEventListener('click', () => {
+        const isFocused = workspace.classList.toggle('focus-diff');
+        focusDiffBtn.classList.toggle('active', isFocused);
+        focusDiffBtn.innerHTML = isFocused
+            ? `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 14h6v6"/><path d="M20 10h-6V4"/><path d="M14 10l7-7"/><path d="M10 14l-7 7"/></svg> Exit Focus`
+            : `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg> Focus Diff`;
+
+        showToast(isFocused ? 'Focused on diff' : 'Restored editors', 'info', 1200);
+    });
 
     // ─────────────────────────────────────────────────────────
     //  COPY DIFF
