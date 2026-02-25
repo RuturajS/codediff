@@ -364,17 +364,25 @@
             <!-- Suggestion Panel -->
             <div class="suggestion-panel" id="suggestionPanel" hidden aria-label="Change suggestions">
                 <div class="suggestion-header">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                        style="color:var(--diff-changed-text);flex-shrink:0">
-                        <circle cx="12" cy="12" r="10" />
-                        <line x1="12" y1="8" x2="12" y2="12" />
-                        <line x1="12" y1="16" x2="12.01" y2="16" />
-                    </svg>
-                    <span>Suggestions — <strong id="suggestionCount">0</strong> changed line(s)</span>
-                    <button class="btn btn-sm btn-ghost" id="applyAllSuggestions"
-                        title="Replace all changed left-pane lines with their right-pane values">Apply All</button>
-                    <button class="btn btn-sm btn-ghost suggestion-toggle-btn" id="toggleSuggestions"
-                        title="Collapse / expand">▼</button>
+                    <div class="suggestion-header-left">
+                        Built by <a href="https://linkedin.com/in/ruturajsharbidre" target="_blank"
+                            rel="noopener noreferrer" class="footer-link">Ruturaj Sharbidre</a>
+                    </div>
+                    <div class="suggestion-header-center">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" style="color:var(--diff-changed-text);flex-shrink:0">
+                            <circle cx="12" cy="12" r="10" />
+                            <line x1="12" y1="8" x2="12" y2="12" />
+                            <line x1="12" y1="16" x2="12.01" y2="16" />
+                        </svg>
+                        <span>Suggestions — <strong id="suggestionCount">0</strong> changed line(s)</span>
+                    </div>
+                    <div class="suggestion-header-right">
+                        <button class="btn btn-sm btn-ghost" id="applyAllSuggestions"
+                            title="Replace all changed left-pane lines with their right-pane values">Apply All</button>
+                        <button class="btn btn-sm btn-ghost suggestion-toggle-btn" id="toggleSuggestions"
+                            title="Collapse / expand">▼</button>
+                    </div>
                 </div>
                 <div class="suggestion-list" id="suggestionList" role="list"></div>
             </div>
@@ -382,15 +390,7 @@
 
     </main>
 
-    <!-- ===== ABOUT FOOTER ===== -->
-    <footer class="app-footer" role="contentinfo">
-        <span>Built by
-            <a href="https://linkedin.com/in/ruturajsharbidre" target="_blank" rel="noopener noreferrer"
-                class="footer-link" aria-label="Ruturaj Sharbidre on LinkedIn">Ruturaj Sharbidre</a>
-        </span>
-        <span class="footer-sep" aria-hidden="true">·</span>
-        <span>Codediff</span>
-    </footer>
+
 
     <!-- ===== TOAST NOTIFICATION ===== -->
     <div class="toast-container" id="toastContainer" aria-live="assertive" aria-atomic="true"></div>

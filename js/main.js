@@ -612,8 +612,7 @@
             const delta = startY - e.clientY;         // drag up = bigger diff
             const wsH = workspace.getBoundingClientRect().height;
             const actionH = document.getElementById('actionBar').offsetHeight;
-            const footerH = document.querySelector('.app-footer')?.offsetHeight || 0;
-            const maxDiff = wsH - actionH - footerH - 80;  // leave at least 80px for editors
+            const maxDiff = wsH - actionH - 80;  // leave at least 80px for editors
             const newH = Math.min(maxDiff, Math.max(100, startDiffH + delta));
             diffOutputSection.style.flex = `0 0 ${newH}px`;
             editorsRow.style.flex = '1 1 0';

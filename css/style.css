@@ -1271,8 +1271,7 @@ body.fullscreen-editor .app-header {
    ============================================================ */
 .suggestion-panel {
   position: absolute;
-  bottom: 28px;
-  /* Room for footer */
+  bottom: 0;
   left: 0;
   right: 0;
   background: var(--surface);
@@ -1280,20 +1279,41 @@ body.fullscreen-editor .app-header {
   display: flex;
   flex-direction: column;
   z-index: 100;
-  max-height: 40%;
+  max-height: 48%;
+  /* Slight increase for better view */
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
 }
 
 .suggestion-header {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 16px;
+  justify-content: space-between;
+  padding: 6px 16px;
   background: var(--surface-2);
   border-bottom: 1px solid var(--border);
   font-size: 0.8rem;
   font-weight: 500;
   flex-shrink: 0;
+  height: 38px;
+}
+
+.suggestion-header-left,
+.suggestion-header-center,
+.suggestion-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.suggestion-header-left {
+  font-size: 0.72rem;
+  color: var(--text-faint);
+}
+
+.suggestion-header-center {
+  flex: 1;
+  justify-content: center;
+  gap: 10px;
 }
 
 .suggestion-header strong {
@@ -1487,25 +1507,8 @@ body.fullscreen-editor .app-header {
 }
 
 /* ============================================================
-   ABOUT FOOTER
+   ABOUT (FOOTER LINK)
    ============================================================ */
-.app-footer {
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  font-size: 0.72rem;
-  color: var(--text-faint);
-  background: var(--surface);
-  border-top: 1px solid var(--border);
-  flex-shrink: 0;
-  user-select: none;
-  letter-spacing: 0.01em;
-  position: relative;
-  z-index: 101;
-}
-
 .footer-link {
   color: var(--accent);
   text-decoration: none;
@@ -1518,9 +1521,6 @@ body.fullscreen-editor .app-header {
   text-decoration: underline;
 }
 
-.footer-sep {
-  opacity: 0.4;
-}
 
 /* ============================================================
    UTILITY
