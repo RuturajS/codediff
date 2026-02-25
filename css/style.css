@@ -1288,13 +1288,13 @@ body.fullscreen-editor .app-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 6px 16px;
+  padding: 4px 16px;
+  /* Even more minimal */
   background: var(--surface-2);
   border-bottom: 1px solid var(--border);
   font-size: 0.8rem;
   font-weight: 500;
   flex-shrink: 0;
-  height: 38px;
 }
 
 .suggestion-header-left,
@@ -1306,14 +1306,22 @@ body.fullscreen-editor .app-header {
 }
 
 .suggestion-header-left {
-  font-size: 0.72rem;
-  color: var(--text-faint);
+  flex: 1;
+  justify-content: flex-start;
 }
 
 .suggestion-header-center {
-  flex: 1;
+  flex: 2;
+  /* More space for center branding */
   justify-content: center;
-  gap: 10px;
+  font-size: 0.75rem;
+  color: var(--text-faint);
+  letter-spacing: 0.02em;
+}
+
+.suggestion-header-right {
+  flex: 1;
+  justify-content: flex-end;
 }
 
 .suggestion-header strong {
